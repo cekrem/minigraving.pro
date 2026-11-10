@@ -5,6 +5,18 @@
   --color-dark: #2c2b2c;
 }
 
+html {
+  font-size: 2vh;
+}
+
+body {
+  overscroll-behavior: none;
+  overflow: hidden;
+  position: fixed;
+  width: 100vw;
+  height: 100vh;
+}
+
 .bg-house {
   background-image: url("./house.svg");
 }
