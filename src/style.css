@@ -1,0 +1,21 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand: #fd6d01;
+  --color-dark: #2c2b2c;
+}
+
+.bg-house {
+  background-image: url("./house.svg");
+}
+
+.bg-arm {
+  background-image: url("./arm.svg");
+}
+
+.bg-house,
+.bg-arm {
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}

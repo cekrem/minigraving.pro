@@ -1,0 +1,10 @@
+{
+    "targets": {
+        "Elm Main": {
+            "inputs": [
+                "/Users/cekrem/code/minigraving.pro/src/Main.elm"
+            ],
+            "output": "/Users/cekrem/code/minigraving.pro/elm-stuff/output.js"
+        }
+    }
+}
