@@ -18,9 +18,7 @@ main =
 
 type Model
     = Idle
-    | Moving XOffset YOffset
-      -- TODO: Create unified holder of scroll state and pointer position
-    | Scrolling ScrollProgress
+    | Moving XOffset YOffset ScrollProgress
 
 
 type alias XOffset =
@@ -66,21 +64,18 @@ offset model =
         Idle ->
             ( 0, 0 )
 
-        Moving x y ->
-            ( calibratedX x, calibratedY y )
-
-        Scrolling prog ->
-            ( negate <| prog * 3, negate prog )
+        Moving x y prog ->
+            ( calibratedX x prog, calibratedY y prog )
 
 
-calibratedX : Float -> Float
-calibratedX =
-    (*) 2
+calibratedX : XOffset -> ScrollProgress -> Float
+calibratedX x prog =
+    x * 2 + (negate prog * 3)
 
 
-calibratedY : Float -> Float
-calibratedY =
-    (*) 1.1
+calibratedY : YOffset -> ScrollProgress -> Float
+calibratedY y prog =
+    y * 1.1 + negate prog
 
 
 wheelRotation : Model -> Html.Attribute msg
@@ -129,12 +124,18 @@ decodeScrollEvent =
 
 update : Msg -> Model -> Model
 update msg model =
-    case msg of
-        PointerMoved width height x y ->
-            Moving (calculateOffset width x) (calculateOffset height y)
+    case ( model, msg ) of
+        ( Idle, PointerMoved width height x y ) ->
+            Moving (calculateOffset width x) (calculateOffset height y) 0
 
-        Scrolled height progress ->
-            Scrolling <| (progress / height)
+        ( Idle, Scrolled height progress ) ->
+            Moving 0 0 (progress / height)
+
+        ( Moving _ _ scroll, PointerMoved width height x y ) ->
+            Moving (calculateOffset width x) (calculateOffset height y) scroll
+
+        ( Moving x y _, Scrolled height progress ) ->
+            Moving x y (progress / height)
 
 
 calculateOffset : Float -> Float -> Float
@@ -165,7 +166,7 @@ view model =
             ]
             [ Html.header [ Attr.class "p-4 text-center text-brand" ]
                 [ Html.h1 [ Attr.class "text-3xl font-bold font-stretch-200% uppercase" ] [ Html.text "minigraving.pro" ]
-                , Html.h3 [ Attr.class "text-xl text-white font-mono" ] [ Html.text "– Små og store gravejobber i Grenland og omegn" ]
+                , Html.h3 [ Attr.class "text-lg text-white font-mono" ] [ Html.text "– Små og store gravejobber i Grenland og omegn" ]
                 ]
             , Html.section
                 [ Attr.class "flex flex-col items-center justify-center gap-2"
@@ -205,21 +206,11 @@ view model =
 
 viewExcavator : Model -> Html msg
 viewExcavator model =
-    let
-        selfAlignment =
-            case model of
-                Scrolling _ ->
-                    Attr.class "self-end"
-
-                _ ->
-                    Attr.class "self-center"
-    in
     Html.div
-        [ Attr.class "flex flex-col"
+        [ Attr.class "flex flex-col self-end"
         , Attr.class "z-20"
         , Attr.class "[zoom:0.3] md:[zoom:0.6]"
         , xTransform model
-        , selfAlignment
         ]
         [ Html.div [ Attr.class "flex justify-center pr-6" ]
             [ Html.div [ Attr.class "h-46 w-74 bg-arm origin-[95%_80%]", armRotation model ] []
