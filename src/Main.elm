@@ -151,24 +151,36 @@ calculateOffset total pos =
 view : Model -> Html Msg
 view model =
     Html.main_
-        [ Attr.class "overflow-y-scroll h-dvh"
+        [ Attr.class "h-dvh"
+        , Attr.class "overflow-y-scroll"
         , Events.on "mousemove" decodePointerMoveEvent
         , Events.on "scroll" decodeScrollEvent
         ]
         [ Html.div
-            [ Attr.class "w-wv h-dvh overflow-x-clip overflow-y-visible"
-            , Attr.class "flex flex-col items-center justify-between"
+            [ Attr.class "flex flex-col items-center justify-between"
+            , Attr.class "h-dvh"
+            , Attr.class "overflow-x-clip overflow-y-visible"
             , Attr.class "bg-gif grain"
             ]
-            [ Html.header [ Attr.class "text-center p-4 text-brand" ]
+            [ Html.header [ Attr.class "p-4 text-center text-brand" ]
                 [ Html.h1 [ Attr.class "text-3xl font-bold font-stretch-200% uppercase" ] [ Html.text "minigraving.pro" ]
                 ]
-            , Html.section [ Attr.class "mt-12 font-mono rounded-xl p-8 min-w-96 flex flex-col justify-center text-center items-center gap-2" ]
+            , Html.section
+                [ Attr.class "flex flex-col items-center justify-center gap-2"
+                , Attr.class "min-w-96"
+                , Attr.class "p-8 mt-12"
+                , Attr.class "font-mono text-center"
+                , Attr.class "rounded-xl"
+                ]
                 [ Html.h2 [ Attr.class "text-5xl md:text-7xl text-white" ] [ Html.text "Graving, drenering og utleie" ]
                 , Html.h2 [ Attr.class "text-3xl text-white" ] [ Html.text "– med og uten fører" ]
                 , Html.a
-                    [ Attr.class "flex gap-2 border-3 border-brand rounded-full py-2 px-8 mt-8 text-xl text-white"
-                    , Attr.class "transition-colors hover:bg-brand"
+                    [ Attr.class "flex gap-2"
+                    , Attr.class "px-8 py-2 mt-8"
+                    , Attr.class "text-xl text-white"
+                    , Attr.class "hover:bg-brand"
+                    , Attr.class "border-3 border-brand rounded-full"
+                    , Attr.class "transition-colors"
                     , Attr.href "tel:90651267"
                     ]
                     [ Html.div [] [ Html.text "906" ]
@@ -179,10 +191,13 @@ view model =
             , viewExcavator model
             ]
         , Html.div
-            [ Attr.class "w-full h-dvh overflow-clip bg-dark grain"
-            , Attr.class "flex flex-col justify-center items-center text-center"
+            [ Attr.class "flex flex-col items-center justify-center"
+            , Attr.class "h-dvh w-full"
+            , Attr.class "overflow-clip"
+            , Attr.class "text-center"
+            , Attr.class "bg-dark grain"
             ]
-            [ Html.section [ Attr.class "font-mono p-8 text-white text-3xl" ] [ Html.text "Her kommer det litt mer innhold etter hvert" ] ]
+            [ Html.section [ Attr.class "p-8 font-mono text-3xl text-white" ] [ Html.text "Her kommer det litt mer innhold etter hvert" ] ]
         ]
 
 
@@ -199,13 +214,14 @@ viewExcavator model =
     in
     Html.div
         [ Attr.class "flex flex-col"
-        , Attr.class "[zoom:0.3] md:[zoom:0.6] z-20"
+        , Attr.class "z-20"
+        , Attr.class "[zoom:0.3] md:[zoom:0.6]"
         , xTransform model
         , selfAlignment
         ]
         [ Html.div [ Attr.class "flex justify-center pr-6" ]
-            [ Html.div [ Attr.class "bg-arm h-46 w-74 origin-[95%_80%]", armRotation model ] []
-            , Html.div [ Attr.class "-ml-8 bg-house h-46 w-56" ] []
+            [ Html.div [ Attr.class "h-46 w-74 bg-arm origin-[95%_80%]", armRotation model ] []
+            , Html.div [ Attr.class "h-46 w-56 -ml-8 bg-house" ] []
             ]
         , viewWheels model
         ]
@@ -222,17 +238,19 @@ viewWheels model =
 
         wheel =
             Html.div
-                [ Attr.class "size-16 m-2 rounded-full border-4 border-dashed"
-                , Attr.class "flex justify-center items-center"
+                [ Attr.class "flex items-center justify-center"
+                , Attr.class "size-16"
+                , Attr.class "m-2"
+                , Attr.class "border-4 border-dashed rounded-full"
                 , rotationAttr
                 ]
                 [ Html.div [ Attr.class "size-4 bg-dark" ] [] ]
 
         beltBorder =
-            Html.div [ Attr.class "border-8 rounded-full size-20 border-dashed", rotationAttr ] []
+            Html.div [ Attr.class "size-20 border-8 border-dashed rounded-full", rotationAttr ] []
 
         beltStretch =
-            Html.div [ Attr.class "border-t-8 border-dashed w-[1000rem] ml-[-500rem] h-1", xTransformAttr ] []
+            Html.div [ Attr.class "h-1 w-[1000rem] ml-[-500rem] border-t-8 border-dashed", xTransformAttr ] []
 
         beltLeftEnd =
             Html.div [ Attr.class "absolute w-10 overflow-clip" ] [ beltBorder ]
@@ -241,15 +259,20 @@ viewWheels model =
             Html.div [ Attr.class "absolute right-0 w-10 overflow-clip rotate-180" ] [ beltBorder ]
 
         beltTop =
-            Html.div [ Attr.class "absolute top-0 left-10 right-10 overflow-clip" ] [ beltStretch ]
+            Html.div [ Attr.class "absolute top-0 right-10 left-10 overflow-clip" ] [ beltStretch ]
 
         beltBottom =
-            Html.div [ Attr.class "absolute bottom-0 left-10 right-10 overflow-clip rotate-180" ] [ beltStretch ]
+            Html.div [ Attr.class "absolute right-10 bottom-0 left-10 overflow-clip rotate-180" ] [ beltStretch ]
 
         middle =
-            Html.div [ Attr.class "absolute rounded-full h-8 left-8 right-8 bg-dark" ] []
+            Html.div [ Attr.class "absolute right-8 left-8 h-8 bg-dark rounded-full" ] []
     in
-    Html.div [ Attr.class "relative self-end w-1/2 flex items-center justify-between" ]
+    Html.div
+        [ Attr.class "flex"
+        , Attr.class "relative"
+        , Attr.class "w-1/2"
+        , Attr.class "items-center justify-between self-end"
+        ]
         [ middle
         , beltLeftEnd
         , wheel
