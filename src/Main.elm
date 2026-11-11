@@ -100,11 +100,11 @@ update : Msg -> Model -> Model
 update msg model =
     case msg of
         PointerMoved width height x y ->
-            Moving (calculateOffsetPercentage width x) (calculateOffsetPercentage height y)
+            Moving (calculateOffset width x) (calculateOffset height y)
 
 
-calculateOffsetPercentage : Float -> Float -> Float
-calculateOffsetPercentage total pos =
+calculateOffset : Float -> Float -> Float
+calculateOffset total pos =
     let
         half =
             total / 2
@@ -118,13 +118,13 @@ calculateOffsetPercentage total pos =
 view : Model -> Html Msg
 view model =
     Html.main_
-        [ Attr.class "h-screen v-screen overflow-clip"
+        [ Attr.class "fixed inset-0 overflow-clip"
         , Attr.class "flex flex-col items-center justify-between"
         , Attr.class "bg-neutral-400"
         , Events.on "pointermove" decodeMouseEvent
         ]
         [ Html.header [ Attr.class "text-center p-4 text-dark" ]
-            [ Html.h1 [ Attr.class "text-2xl font-bold font-stretch-200% uppercase" ] [ Html.text "minigraving.pro" ]
+            [ Html.h1 [ Attr.class "text-3xl font-bold font-stretch-200% uppercase" ] [ Html.text "minigraving.pro" ]
             ]
         , Html.p [] [ Html.text "{ Her kommer det noe innhold }" ]
         , viewExcavator model
@@ -133,7 +133,11 @@ view model =
 
 viewExcavator : Model -> Html msg
 viewExcavator model =
-    Html.div [ Attr.class "flex flex-col", xTransform model ]
+    Html.div
+        [ Attr.class "flex flex-col"
+        , Attr.class "[zoom:0.5] lg:[zoom:0.75]"
+        , xTransform model
+        ]
         [ Html.div [ Attr.class "flex justify-center pr-6" ]
             [ Html.div [ Attr.class "bg-arm h-46 w-74 origin-[95%_80%]", armRotation model ] []
             , Html.div [ Attr.class "-ml-8 bg-house h-46 w-56" ] []
