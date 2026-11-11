@@ -153,7 +153,7 @@ view : Model -> Html Msg
 view model =
     Html.main_
         [ Attr.class "h-dvh"
-        , Attr.class "overflow-y-scroll scroll-smooth"
+        , Attr.class "overflow-y-scroll scroll-smooth [overflow-behavior:none]"
         , Events.on "mousemove" decodePointerMoveEvent
         , Events.on "scroll" decodeScrollEvent
         ]
