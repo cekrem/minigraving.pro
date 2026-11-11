@@ -161,7 +161,7 @@ view model =
         [ Html.div
             [ Attr.class "flex flex-col items-center justify-between"
             , Attr.class "h-dvh"
-            , Attr.class "overflow-x-clip overflow-y-visible"
+            , Attr.class "overflow-clip"
             , Attr.class "bg-gif grain"
             ]
             [ Html.header [ Attr.class "p-4 text-center text-brand" ]
@@ -177,7 +177,8 @@ view model =
                 ]
                 [ Html.h2 [ Attr.class "text-5xl md:text-7xl text-white" ] [ Html.text "Graving, drenering og maskinutleie" ]
                 , Html.a
-                    [ Attr.class "flex gap-2"
+                    [ Attr.class "sticky top-2"
+                    , Attr.class "flex gap-2"
                     , Attr.class "px-8 py-2 mt-8"
                     , Attr.class "text-xl text-white"
                     , Attr.class "hover:bg-brand"
@@ -195,12 +196,64 @@ view model =
             ]
         , Html.div
             [ Attr.class "flex flex-col items-center justify-center"
-            , Attr.class "h-dvh w-full"
+            , Attr.class "min-h-dvh w-full"
             , Attr.class "overflow-clip"
             , Attr.class "text-center"
-            , Attr.class "bg-dark grain"
+            , Attr.class "bg-dark bg-minigraver grain"
             ]
-            [ Html.section [ Attr.class "p-8 font-mono text-3xl text-white" ] [ Html.text "Her kommer det litt mer innhold etter hvert" ] ]
+            [ viewMachineStats ]
+        ]
+
+
+type alias Stat =
+    { label : String
+    , value : String
+    , unit : String
+    }
+
+
+machineStats : List Stat
+machineStats =
+    [ { label = "Vekt", value = "2590", unit = "kg" }
+    , { label = "Motor", value = "20,9", unit = "hk" }
+    , { label = "Gravedybde", value = "2,82", unit = "m" }
+    , { label = "Rekkevidde", value = "4,74", unit = "m" }
+    , { label = "Bredde", value = "1,5", unit = "m" }
+    , { label = "Gravekraft skuff", value = "21", unit = "kN" }
+    , { label = "Hjelpehydraulikk", value = "48", unit = "l/min" }
+    , { label = "Kjørehastighet", value = "4,5", unit = "km/t" }
+    ]
+
+
+viewMachineStats : Html msg
+viewMachineStats =
+    Html.section
+        [ Attr.class "flex flex-col items-center gap-8"
+        , Attr.class "max-w-4xl p-8"
+        , Attr.class "font-mono text-white"
+        ]
+        [ Html.header [ Attr.class "flex flex-col gap-2" ]
+            [ Html.h2 [ Attr.class "text-4xl md:text-6xl font-bold font-stretch-200% uppercase text-brand" ] [ Html.text "Kubota U27-4" ]
+            , Html.p [ Attr.class "text-lg" ] [ Html.text "Vi har en sterk og kompakt minigraver med null halesving, som kommer til der store maskiner ikke slipper inn. Vi leier ut med og uten fører, og graveren kan kjøres uten maskinførerbevis" ]
+            ]
+        , Html.dl [ Attr.class "grid grid-cols-2 md:grid-cols-4 gap-4 w-full" ]
+            (List.map viewStat machineStats)
+        , Html.p [ Attr.class "text-sm opacity-70" ] [ Html.text "Stage V-motor · Under 3,5 tonn med henger · ROPS/OPG-hytte" ]
+        ]
+
+
+viewStat : Stat -> Html msg
+viewStat stat =
+    Html.div
+        [ Attr.class "flex flex-col-reverse gap-1"
+        , Attr.class "p-4"
+        , Attr.class "border-3 border-brand rounded-xl"
+        ]
+        [ Html.dt [ Attr.class "text-sm uppercase opacity-80" ] [ Html.text stat.label ]
+        , Html.dd [ Attr.class "text-2xl md:text-3xl" ]
+            [ Html.text stat.value
+            , Html.span [ Attr.class "ml-1 text-base text-brand" ] [ Html.text stat.unit ]
+            ]
         ]
 
 

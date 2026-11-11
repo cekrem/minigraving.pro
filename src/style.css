@@ -15,6 +15,21 @@
   background-image: url("./arm.svg");
 }
 
+.bg-minigraver {
+  @apply bg-dark;
+}
+
+.bg-minigraver::before {
+  @apply rounded-xl;
+  @apply inset-0;
+  content: "";
+  position: absolute;
+  z-index: -1;
+  opacity: 0.5;
+  filter: grayscale(100%);
+  background-image: url("./minigraver.png");
+}
+
 .bg-gif {
   @apply bg-dark;
 }
@@ -32,7 +47,7 @@
 
 .bg-house,
 .bg-arm,
-.bg-arm,
+.bg-minigraver::before,
 .bg-gif::before {
   background-size: cover;
   background-position: center;
