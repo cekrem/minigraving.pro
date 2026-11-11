@@ -19,6 +19,7 @@ main =
 type Model
     = Idle
     | Moving XOffset YOffset
+      -- TODO: Create unified holder of scroll state and pointer position
     | Scrolling ScrollProgress
 
 
@@ -152,7 +153,7 @@ view : Model -> Html Msg
 view model =
     Html.main_
         [ Attr.class "h-dvh"
-        , Attr.class "overflow-y-scroll"
+        , Attr.class "overflow-y-scroll scroll-smooth"
         , Events.on "mousemove" decodePointerMoveEvent
         , Events.on "scroll" decodeScrollEvent
         ]
@@ -181,9 +182,10 @@ view model =
                     , Attr.class "hover:bg-brand"
                     , Attr.class "border-3 border-brand rounded-full"
                     , Attr.class "transition-colors"
-                    , Attr.href "tel:90651267"
+                    , Attr.href "tel:+4790651267"
                     ]
-                    [ Html.div [] [ Html.text "906" ]
+                    [ Html.div [] [ Html.text "+47" ]
+                    , Html.div [] [ Html.text "906" ]
                     , Html.div [] [ Html.text "51" ]
                     , Html.div [] [ Html.text "267" ]
                     ]
