@@ -5,6 +5,7 @@ const result = await Bun.build({
   entrypoints: ["index.html"],
   outdir: "./dist",
   plugins: [elmPlugin, tailwindPlugin],
+  minify: true,
 });
 
 console.log(result);
