@@ -165,6 +165,7 @@ view model =
             ]
             [ Html.header [ Attr.class "p-4 text-center text-brand" ]
                 [ Html.h1 [ Attr.class "text-3xl font-bold font-stretch-200% uppercase" ] [ Html.text "minigraving.pro" ]
+                , Html.h3 [ Attr.class "text-xl text-white font-mono" ] [ Html.text "– Små og store gravejobber i Grenland og omegn" ]
                 ]
             , Html.section
                 [ Attr.class "flex flex-col items-center justify-center gap-2"
@@ -173,8 +174,7 @@ view model =
                 , Attr.class "font-mono text-center"
                 , Attr.class "rounded-xl"
                 ]
-                [ Html.h2 [ Attr.class "text-5xl md:text-7xl text-white" ] [ Html.text "Graving, drenering og utleie" ]
-                , Html.h2 [ Attr.class "text-3xl text-white" ] [ Html.text "– med og uten fører" ]
+                [ Html.h2 [ Attr.class "text-5xl md:text-7xl text-white" ] [ Html.text "Graving, drenering og maskinutleie" ]
                 , Html.a
                     [ Attr.class "flex gap-2"
                     , Attr.class "px-8 py-2 mt-8"
