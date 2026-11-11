@@ -19,6 +19,7 @@ main =
 type Model
     = Idle
     | Moving XOffset YOffset
+    | Scrolling ScrollProgress
 
 
 type alias XOffset =
@@ -45,8 +46,17 @@ type alias YPos =
     Float
 
 
+type alias ScrolledDistance =
+    Float
+
+
+type alias ScrollProgress =
+    Float
+
+
 type Msg
     = PointerMoved WidthPixels HeightPixels XPos YPos
+    | Scrolled HeightPixels ScrolledDistance
 
 
 offset : Model -> ( XOffset, YOffset )
@@ -56,7 +66,20 @@ offset model =
             ( 0, 0 )
 
         Moving x y ->
-            ( x, y )
+            ( calibratedX x, calibratedY y )
+
+        Scrolling prog ->
+            ( negate <| prog * 3, negate prog )
+
+
+calibratedX : Float -> Float
+calibratedX =
+    (*) 2
+
+
+calibratedY : Float -> Float
+calibratedY =
+    (*) 1.1
 
 
 wheelRotation : Model -> Html.Attribute msg
@@ -87,8 +110,8 @@ xTransform =
         >> (\o -> Attr.style "transform" ("translateX(" ++ o ++ "rem"))
 
 
-decodeMouseEvent : Decoder Msg
-decodeMouseEvent =
+decodePointerMoveEvent : Decoder Msg
+decodePointerMoveEvent =
     Decode.map4 PointerMoved
         (Decode.at [ "view", "innerWidth" ] Decode.float)
         (Decode.at [ "view", "innerHeight" ] Decode.float)
@@ -96,11 +119,21 @@ decodeMouseEvent =
         (Decode.field "clientY" Decode.float)
 
 
+decodeScrollEvent : Decoder Msg
+decodeScrollEvent =
+    Decode.map2 Scrolled
+        (Decode.at [ "target", "clientHeight" ] Decode.float)
+        (Decode.at [ "target", "scrollTop" ] Decode.float)
+
+
 update : Msg -> Model -> Model
 update msg model =
     case msg of
         PointerMoved width height x y ->
             Moving (calculateOffset width x) (calculateOffset height y)
+
+        Scrolled height progress ->
+            Scrolling <| (progress / height)
 
 
 calculateOffset : Float -> Float -> Float
@@ -118,25 +151,57 @@ calculateOffset total pos =
 view : Model -> Html Msg
 view model =
     Html.main_
-        [ Attr.class "fixed inset-0 overflow-clip"
-        , Attr.class "flex flex-col items-center justify-between"
-        , Attr.class "bg-neutral-400"
-        , Events.on "pointermove" decodeMouseEvent
+        [ Attr.class "overflow-y-scroll h-dvh"
+        , Events.on "mousemove" decodePointerMoveEvent
+        , Events.on "scroll" decodeScrollEvent
         ]
-        [ Html.header [ Attr.class "text-center p-4 text-dark" ]
-            [ Html.h1 [ Attr.class "text-3xl font-bold font-stretch-200% uppercase" ] [ Html.text "minigraving.pro" ]
+        [ Html.div
+            [ Attr.class "w-wv h-dvh overflow-x-clip overflow-y-visible"
+            , Attr.class "flex flex-col items-center justify-between"
+            , Attr.class "bg-gif grain"
             ]
-        , Html.p [] [ Html.text "{ Her kommer det noe innhold }" ]
-        , viewExcavator model
+            [ Html.header [ Attr.class "text-center p-4 text-brand" ]
+                [ Html.h1 [ Attr.class "text-3xl font-bold font-stretch-200% uppercase" ] [ Html.text "minigraving.pro" ]
+                ]
+            , Html.section [ Attr.class "mt-12 font-mono rounded-xl p-8 min-w-96 flex flex-col justify-center text-center items-center gap-2" ]
+                [ Html.h2 [ Attr.class "text-5xl md:text-7xl text-white" ] [ Html.text "Graving, drenering og utleie" ]
+                , Html.h2 [ Attr.class "text-3xl text-white" ] [ Html.text "– med og uten fører" ]
+                , Html.a
+                    [ Attr.class "flex gap-2 border-3 border-brand rounded-full py-2 px-8 mt-8 text-xl text-white"
+                    , Attr.class "transition-colors hover:bg-brand"
+                    , Attr.href "tel:90651267"
+                    ]
+                    [ Html.div [] [ Html.text "906" ]
+                    , Html.div [] [ Html.text "51" ]
+                    , Html.div [] [ Html.text "267" ]
+                    ]
+                ]
+            , viewExcavator model
+            ]
+        , Html.div
+            [ Attr.class "w-full h-dvh overflow-clip bg-dark grain"
+            , Attr.class "flex flex-col justify-center items-center text-center"
+            ]
+            [ Html.section [ Attr.class "font-mono p-8 text-white text-3xl" ] [ Html.text "Her kommer det litt mer innhold etter hvert" ] ]
         ]
 
 
 viewExcavator : Model -> Html msg
 viewExcavator model =
+    let
+        selfAlignment =
+            case model of
+                Scrolling _ ->
+                    Attr.class "self-end"
+
+                _ ->
+                    Attr.class "self-center"
+    in
     Html.div
         [ Attr.class "flex flex-col"
-        , Attr.class "[zoom:0.5] lg:[zoom:0.75]"
+        , Attr.class "[zoom:0.3] md:[zoom:0.6] z-20"
         , xTransform model
+        , selfAlignment
         ]
         [ Html.div [ Attr.class "flex justify-center pr-6" ]
             [ Html.div [ Attr.class "bg-arm h-46 w-74 origin-[95%_80%]", armRotation model ] []
@@ -161,7 +226,7 @@ viewWheels model =
                 , Attr.class "flex justify-center items-center"
                 , rotationAttr
                 ]
-                [ Html.div [ Attr.class "size-4 bg-brand" ] [] ]
+                [ Html.div [ Attr.class "size-4 bg-dark" ] [] ]
 
         beltBorder =
             Html.div [ Attr.class "border-8 rounded-full size-20 border-dashed", rotationAttr ] []
