@@ -370,7 +370,7 @@ viewMachineStats =
         [ Html.h2 [ logoTypography ] [ Html.text "Kubota U27-4" ]
         , Html.p [ Attr.class "text-lg font-bold" ] [ Html.text "Vi har en sterk og kompakt minigraver med null halesving, som kommer til der store maskiner ikke slipper inn. Vi leier ut med og uten fører, og graveren kan kjøres uten maskinførerbevis" ]
         ]
-    , Html.dl [ Attr.class "grid grid-cols-2 md:grid-cols-4 gap-4 w-full" ]
+    , Html.dl [ Attr.class "grid grid-cols-2 md:grid-cols-3 gap-4 w-full" ]
         (List.map viewStat machineStats)
     ]
         |> HtmlHelpers.wrapToSingleNode
