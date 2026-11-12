@@ -6,6 +6,7 @@ import Html.Attributes as Attr
 import Html.Events as Events
 import HtmlHelpers
 import Json.Decode as Decode exposing (Decoder)
+import String exposing (toInt)
 
 
 
@@ -80,7 +81,7 @@ pageOpacity : Int -> Model -> PageOpacity msg
 pageOpacity index model =
     (case model of
         Idle ->
-            1
+            1 - toFloat index
 
         Moving _ _ prog ->
             let
@@ -191,18 +192,11 @@ view model =
         , Events.on "mousemove" decodePointerMoveEvent
         , Events.on "scroll" decodeScrollEvent
         ]
-        [ Html.header
-            [ Attr.class "fixed p-4 z-15 w-full text-center text-brand"
-            , firstOpacity
-            ]
-            [ Html.h1 [ logoTypography ] [ Html.text "minigraving.pro" ]
-            ]
-        , Html.header
-            [ Attr.class "fixed p-4 z-15 w-full text-center text-brand"
-            , thirdOpacity
-            ]
-            [ Html.h1 [ logoTypography ] [ Html.text "minigraving.pro" ]
-            ]
+        [ viewHeader [ firstOpacity ] []
+        , viewHeader [ Attr.class "text-dark", secondOpacity ] []
+        , viewHeader [ thirdOpacity ] []
+        , viewFooter [ secondOpacity ] []
+        , viewFooter [ thirdOpacity ] []
         , -- first page
           Html.div
             [ Attr.class "flex flex-col items-center justify-between"
@@ -234,7 +228,7 @@ view model =
         , Html.div
             [ Attr.class "flex flex-col items-center justify-center"
             , Attr.class "min-h-dvh w-full"
-            , Attr.class "z-20"
+            , Attr.class "z-10"
             , Attr.class "bg-minigraver grain overflow-clip"
             ]
             [ Html.section
@@ -244,7 +238,6 @@ view model =
                 , secondOpacity
                 ]
                 [ viewMachineStats
-                , viewCallButton
                 ]
             ]
 
@@ -252,6 +245,7 @@ view model =
         , Html.div
             [ Attr.class "flex flex-col items-center justify-center"
             , Attr.class "min-h-dvh w-full"
+            , Attr.class "z-10"
             , Attr.class "overflow-clip"
             , Attr.class "bg-dark grain"
             ]
@@ -273,10 +267,26 @@ view model =
                         , viewPrice "Per uke" 8000
                         ]
                     ]
-                , viewCallButton
                 ]
             ]
         ]
+
+
+viewHeader : List (Html.Attribute msg) -> List (Html msg) -> Html msg
+viewHeader attrs content =
+    Html.header
+        (Attr.class "z-15 fixed flex flex-col items-center p-4 w-full text-center text-brand"
+            :: attrs
+        )
+        (Html.h1 [ logoTypography ] [ Html.text "minigraving.pro" ]
+            :: content
+        )
+
+
+viewFooter : List (Html.Attribute msg) -> List (Html msg) -> Html msg
+viewFooter attrs content =
+    Html.footer (Attr.class "z-15 fixed flex flex-col items-center p-4 w-full text-center bottom-0" :: attrs)
+        (viewCallButton :: content)
 
 
 viewPrice : String -> Int -> Html msg
@@ -302,7 +312,7 @@ viewCallButton =
         [ Attr.class "justify-self-start self-center"
         , Attr.class "flex gap-2"
         , Attr.class "px-8 py-2 mt-8"
-        , Attr.class "text-xl"
+        , Attr.class "text-xl text-white"
         , Attr.class "hover:bg-brand"
         , Attr.class "border-3 border-brand rounded-full"
         , Attr.class "transition-colors"
