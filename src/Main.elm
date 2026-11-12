@@ -62,19 +62,7 @@ type alias ScrollProgress =
     Float
 
 
-type alias PageOpacities msg =
-    { firstOpacity : FirstPageOpacity msg, secondOpacity : SecondPageOpacity msg, thirdOpacity : ThirdPageOpacity msg }
-
-
-type alias FirstPageOpacity msg =
-    Html.Attribute msg
-
-
-type alias SecondPageOpacity msg =
-    Html.Attribute msg
-
-
-type alias ThirdPageOpacity msg =
+type alias PageOpacity msg =
     Html.Attribute msg
 
 
@@ -88,31 +76,21 @@ offset model =
             ( calibratedX x prog, calibratedY y prog )
 
 
-opacity : Model -> PageOpacities msg
-opacity model =
-    let
-        attr =
-            String.fromFloat >> Attr.style "opacity"
-
-        no =
-            HtmlHelpers.noAttribute
-
-        mapOs os =
-            case os |> List.map attr of
-                first :: second :: third :: [] ->
-                    PageOpacities first second third
-
-                _ ->
-                    PageOpacities no no no
-    in
+pageOpacity : Int -> Model -> PageOpacity msg
+pageOpacity index model =
     (case model of
         Idle ->
-            [ 1, 1, 1 ]
+            1
 
         Moving _ _ prog ->
-            [ 1 - prog, prog, prog - 1 ]
+            let
+                d =
+                    clamp 0 1 (abs (toFloat index - prog))
+            in
+            (1 + cos (pi * d)) / 2
     )
-        |> mapOs
+        |> String.fromFloat
+        |> Attr.style "opacity"
 
 
 calibratedX : XOffset -> ScrollProgress -> Float
@@ -197,8 +175,14 @@ calculateOffset total pos =
 view : Model -> Html Msg
 view model =
     let
-        { firstOpacity, secondOpacity, thirdOpacity } =
-            model |> opacity
+        firstOpacity =
+            model |> pageOpacity 0
+
+        secondOpacity =
+            model |> pageOpacity 1
+
+        thirdOpacity =
+            model |> pageOpacity 2
     in
     Html.main_
         [ Attr.class "h-dvh"
@@ -207,7 +191,16 @@ view model =
         , Events.on "mousemove" decodePointerMoveEvent
         , Events.on "scroll" decodeScrollEvent
         ]
-        [ Html.header [ Attr.class "fixed p-4 z-15 w-full text-center text-brand" ]
+        [ Html.header
+            [ Attr.class "fixed p-4 z-15 w-full text-center text-brand"
+            , firstOpacity
+            ]
+            [ Html.h1 [ logoTypography ] [ Html.text "minigraving.pro" ]
+            ]
+        , Html.header
+            [ Attr.class "fixed p-4 z-15 w-full text-center text-brand"
+            , thirdOpacity
+            ]
             [ Html.h1 [ logoTypography ] [ Html.text "minigraving.pro" ]
             ]
         , -- first page
@@ -270,13 +263,30 @@ view model =
                 ]
                 [ Html.div [ Attr.class "flex flex-col gap-2" ]
                     [ Html.h2 [ logoTypography ] [ Html.text "Priser, gravearbeid" ]
-                    , Html.p [ Attr.class "text-lg font-bold" ] [ Html.text "TODO" ]
+                    , Html.p [ Attr.class "text-lg font-bold" ] [ Html.text "Etter avtale" ]
                     ]
                 , Html.div [ Attr.class "flex flex-col gap-2" ]
                     [ Html.h2 [ logoTypography ] [ Html.text "Priser, utleie" ]
-                    , Html.p [ Attr.class "text-lg font-bold" ] [ Html.text "TODO" ]
+                    , Html.p [ Attr.class "text-lg font-bold" ]
+                        [ viewPrice "Per dag" 1500
+                        , viewPrice "Per helg" 3000
+                        , viewPrice "Per uke" 8000
+                        ]
                     ]
+                , viewCallButton
                 ]
+            ]
+        ]
+
+
+viewPrice : String -> Int -> Html msg
+viewPrice label price =
+    Html.div [ Attr.class "flex justify-between" ]
+        [ Html.div [] [ Html.text label ]
+        , Html.div [ Attr.class "text-brand" ]
+            [ Html.text <| String.fromInt price
+            , Html.text ",- "
+            , Html.text "eks. mva"
             ]
         ]
 
@@ -289,7 +299,7 @@ logoTypography =
 viewCallButton : Html msg
 viewCallButton =
     Html.a
-        [ Attr.class "justify-self-start"
+        [ Attr.class "justify-self-start self-center"
         , Attr.class "flex gap-2"
         , Attr.class "px-8 py-2 mt-8"
         , Attr.class "text-xl"
