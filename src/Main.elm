@@ -4,7 +4,12 @@ import Browser
 import Html exposing (Html)
 import Html.Attributes as Attr
 import Html.Events as Events
+import HtmlHelpers
 import Json.Decode as Decode exposing (Decoder)
+
+
+
+-- main
 
 
 main : Program () Model Msg
@@ -14,6 +19,10 @@ main =
         , view = view
         , update = update
         }
+
+
+
+-- model
 
 
 type Model
@@ -53,9 +62,12 @@ type alias ScrollProgress =
     Float
 
 
-type Msg
-    = PointerMoved WidthPixels HeightPixels XPos YPos
-    | Scrolled HeightPixels ScrolledDistance
+type alias FirstPageOpacity msg =
+    Html.Attribute msg
+
+
+type alias SecondPageOpacity msg =
+    Html.Attribute msg
 
 
 offset : Model -> ( XOffset, YOffset )
@@ -66,6 +78,22 @@ offset model =
 
         Moving x y prog ->
             ( calibratedX x prog, calibratedY y prog )
+
+
+opacity : Model -> ( FirstPageOpacity msg, SecondPageOpacity msg )
+opacity model =
+    let
+        attr =
+            (+) 0.1 >> String.fromFloat >> Attr.style "opacity"
+    in
+    (case model of
+        Idle ->
+            ( 1, 1 )
+
+        Moving _ _ prog ->
+            ( 1 - prog, prog )
+    )
+        |> Tuple.mapBoth attr attr
 
 
 calibratedX : XOffset -> ScrollProgress -> Float
@@ -106,20 +134,13 @@ xTransform =
         >> (\o -> Attr.style "transform" ("translateX(" ++ o ++ "rem"))
 
 
-decodePointerMoveEvent : Decoder Msg
-decodePointerMoveEvent =
-    Decode.map4 PointerMoved
-        (Decode.at [ "view", "innerWidth" ] Decode.float)
-        (Decode.at [ "view", "innerHeight" ] Decode.float)
-        (Decode.field "clientX" Decode.float)
-        (Decode.field "clientY" Decode.float)
+
+-- update
 
 
-decodeScrollEvent : Decoder Msg
-decodeScrollEvent =
-    Decode.map2 Scrolled
-        (Decode.at [ "target", "clientHeight" ] Decode.float)
-        (Decode.at [ "target", "scrollTop" ] Decode.float)
+type Msg
+    = PointerMoved WidthPixels HeightPixels XPos YPos
+    | Scrolled HeightPixels ScrolledDistance
 
 
 update : Msg -> Model -> Model
@@ -150,23 +171,32 @@ calculateOffset total pos =
         / half
 
 
+
+-- view
+
+
 view : Model -> Html Msg
 view model =
+    let
+        ( firstPageOpacity, secondPageOpacity ) =
+            model |> opacity
+    in
     Html.main_
         [ Attr.class "h-dvh"
         , Attr.class "overflow-y-scroll scroll-smooth [overflow-behavior:none]"
+        , Attr.class "select-none"
         , Events.on "mousemove" decodePointerMoveEvent
         , Events.on "scroll" decodeScrollEvent
         ]
-        [ Html.div
+        [ -- first page
+          Html.div
             [ Attr.class "flex flex-col items-center justify-between"
-            , Attr.class "h-dvh"
+            , Attr.class "h-dvh w-full"
             , Attr.class "overflow-clip"
             , Attr.class "bg-gif grain"
             ]
             [ Html.header [ Attr.class "p-4 text-center text-brand" ]
-                [ Html.h1 [ Attr.class "text-3xl font-bold font-stretch-200% uppercase" ] [ Html.text "minigraving.pro" ]
-                , Html.h3 [ Attr.class "text-lg text-white font-mono" ] [ Html.text "– Små og store gravejobber i Grenland og omegn" ]
+                [ Html.h1 [ logoTypography ] [ Html.text "minigraving.pro" ]
                 ]
             , Html.section
                 [ Attr.class "flex flex-col items-center justify-center gap-2"
@@ -174,87 +204,68 @@ view model =
                 , Attr.class "p-8 mt-12"
                 , Attr.class "font-mono text-center"
                 , Attr.class "rounded-xl"
+                , Attr.class "text-white"
+                , firstPageOpacity
                 ]
-                [ Html.h2 [ Attr.class "text-5xl md:text-7xl text-white" ] [ Html.text "Graving, drenering og maskinutleie" ]
-                , Html.a
-                    [ Attr.class "sticky top-2"
-                    , Attr.class "flex gap-2"
-                    , Attr.class "px-8 py-2 mt-8"
-                    , Attr.class "text-xl text-white"
-                    , Attr.class "hover:bg-brand"
-                    , Attr.class "border-3 border-brand rounded-full"
-                    , Attr.class "transition-colors"
-                    , Attr.href "tel:+4790651267"
+                [ Html.h2 [ Attr.class "text-5xl md:text-7xl" ]
+                    [ Html.text "Graving, drenering og maskinutleie"
                     ]
-                    [ Html.div [] [ Html.text "+47" ]
-                    , Html.div [] [ Html.text "906" ]
-                    , Html.div [] [ Html.text "51" ]
-                    , Html.div [] [ Html.text "267" ]
+                , Html.h3 [ Attr.class "text-lg font-bold" ]
+                    [ Html.text "Små og store gravejobber i Grenland og omegn"
                     ]
+                , viewCallButton []
                 ]
             , viewExcavator model
             ]
+
+        -- second page
         , Html.div
             [ Attr.class "flex flex-col items-center justify-center"
             , Attr.class "min-h-dvh w-full"
             , Attr.class "overflow-clip"
-            , Attr.class "text-center"
-            , Attr.class "bg-dark bg-minigraver grain"
+            , Attr.class "bg-minigraver grain"
             ]
-            [ viewMachineStats ]
-        ]
-
-
-type alias Stat =
-    { label : String
-    , value : String
-    , unit : String
-    }
-
-
-machineStats : List Stat
-machineStats =
-    [ { label = "Vekt", value = "2590", unit = "kg" }
-    , { label = "Motor", value = "20,9", unit = "hk" }
-    , { label = "Gravedybde", value = "2,82", unit = "m" }
-    , { label = "Rekkevidde", value = "4,74", unit = "m" }
-    , { label = "Bredde", value = "1,5", unit = "m" }
-    , { label = "Gravekraft skuff", value = "21", unit = "kN" }
-    , { label = "Hjelpehydraulikk", value = "48", unit = "l/min" }
-    , { label = "Kjørehastighet", value = "4,5", unit = "km/t" }
-    ]
-
-
-viewMachineStats : Html msg
-viewMachineStats =
-    Html.section
-        [ Attr.class "flex flex-col items-center gap-8"
-        , Attr.class "max-w-4xl p-8"
-        , Attr.class "font-mono text-white"
-        ]
-        [ Html.header [ Attr.class "flex flex-col gap-2" ]
-            [ Html.h2 [ Attr.class "text-4xl md:text-6xl font-bold font-stretch-200% uppercase text-brand" ] [ Html.text "Kubota U27-4" ]
-            , Html.p [ Attr.class "text-lg" ] [ Html.text "Vi har en sterk og kompakt minigraver med null halesving, som kommer til der store maskiner ikke slipper inn. Vi leier ut med og uten fører, og graveren kan kjøres uten maskinførerbevis" ]
-            ]
-        , Html.dl [ Attr.class "grid grid-cols-2 md:grid-cols-4 gap-4 w-full" ]
-            (List.map viewStat machineStats)
-        , Html.p [ Attr.class "text-sm opacity-70" ] [ Html.text "Stage V-motor · Under 3,5 tonn med henger · ROPS/OPG-hytte" ]
-        ]
-
-
-viewStat : Stat -> Html msg
-viewStat stat =
-    Html.div
-        [ Attr.class "flex flex-col-reverse gap-1"
-        , Attr.class "p-4"
-        , Attr.class "border-3 border-brand rounded-xl"
-        ]
-        [ Html.dt [ Attr.class "text-sm uppercase opacity-80" ] [ Html.text stat.label ]
-        , Html.dd [ Attr.class "text-2xl md:text-3xl" ]
-            [ Html.text stat.value
-            , Html.span [ Attr.class "ml-1 text-base text-brand" ] [ Html.text stat.unit ]
+            [ Html.section
+                [ Attr.class "flex flex-col items-center gap-8"
+                , Attr.class "max-w-4xl p-8"
+                , Attr.class "font-mono text-white"
+                , secondPageOpacity
+                ]
+                [ viewMachineStats
+                , viewCallButton [ Attr.class "border-dark" ]
+                ]
             ]
         ]
+
+
+logoTypography : Html.Attribute msg
+logoTypography =
+    Attr.class "text-3xl font-sans font-bold font-stretch-200% uppercase"
+
+
+viewCallButton : List (Html.Attribute msg) -> Html msg
+viewCallButton attrs =
+    Html.a
+        ([ Attr.class "justify-self-start"
+         , Attr.class "flex gap-2"
+         , Attr.class "px-8 py-2 mt-8"
+         , Attr.class "text-xl"
+         , Attr.class "hover:bg-brand"
+         , Attr.class "border-3 border-brand rounded-full"
+         , Attr.class "transition-colors"
+         , Attr.href "tel:+4790651267"
+         ]
+            ++ attrs
+        )
+        [ Html.div [] [ Html.text "+47" ]
+        , Html.div [] [ Html.text "906" ]
+        , Html.div [] [ Html.text "51" ]
+        , Html.div [] [ Html.text "267" ]
+        ]
+
+
+
+-- animated excavator
 
 
 viewExcavator : Model -> Html msg
@@ -327,3 +338,79 @@ viewWheels model =
         , beltTop
         , beltBottom
         ]
+
+
+
+-- machine stats
+
+
+type alias Stat =
+    { label : String
+    , value : String
+    , unit : String
+    }
+
+
+machineStats : List Stat
+machineStats =
+    [ { label = "Vekt", value = "2590", unit = "kg" }
+    , { label = "Motor", value = "20,9", unit = "hk" }
+    , { label = "Gravedybde", value = "2,82", unit = "m" }
+    , { label = "Rekkevidde", value = "4,74", unit = "m" }
+    , { label = "Bredde", value = "1,5", unit = "m" }
+    , { label = "Gravekraft skuff", value = "21", unit = "kN" }
+
+    --    , { label = "Hjelpehydraulikk", value = "48", unit = "l/min" }
+    --   , { label = "Kjørehastighet", value = "4,5", unit = "km/t" }
+    ]
+
+
+viewMachineStats : Html msg
+viewMachineStats =
+    [ Html.header [ Attr.class "flex flex-col gap-2" ]
+        [ Html.h2 [ logoTypography ] [ Html.text "Kubota U27-4" ]
+        , Html.p [ Attr.class "text-lg font-bold" ] [ Html.text "Vi har en sterk og kompakt minigraver med null halesving, som kommer til der store maskiner ikke slipper inn. Vi leier ut med og uten fører, og graveren kan kjøres uten maskinførerbevis" ]
+        ]
+    , Html.dl [ Attr.class "grid grid-cols-2 md:grid-cols-4 gap-4 w-full" ]
+        (List.map viewStat machineStats)
+    , Html.p [ Attr.class "text-sm" ] [ Html.text "Stage V-motor · Under 3,5 tonn med henger · ROPS/OPG-hytte" ]
+    ]
+        |> HtmlHelpers.wrapToSingleNode
+
+
+viewStat : Stat -> Html msg
+viewStat stat =
+    Html.a
+        [ Attr.class "flex flex-col-reverse gap-1"
+        , Attr.class "p-4"
+        , Attr.class "border-3 border-dark rounded-xl"
+        , Attr.class "transition-colors hover:bg-brand"
+        , Attr.href "https://kuk.kubota-eu.com/constructionmachinery/products/u27-4/"
+        , Attr.target "_blank"
+        ]
+        [ Html.dt [ Attr.class "text-xs", logoTypography ] [ Html.text stat.label ]
+        , Html.dd [ Attr.class "text-2xl md:text-3xl" ]
+            [ Html.text stat.value
+            , Html.span [ Attr.class "ml-1 text-base text-dark" ] [ Html.text stat.unit ]
+            ]
+        ]
+
+
+
+-- decoders
+
+
+decodePointerMoveEvent : Decoder Msg
+decodePointerMoveEvent =
+    Decode.map4 PointerMoved
+        (Decode.at [ "view", "innerWidth" ] Decode.float)
+        (Decode.at [ "view", "innerHeight" ] Decode.float)
+        (Decode.field "clientX" Decode.float)
+        (Decode.field "clientY" Decode.float)
+
+
+decodeScrollEvent : Decoder Msg
+decodeScrollEvent =
+    Decode.map2 Scrolled
+        (Decode.at [ "target", "clientHeight" ] Decode.float)
+        (Decode.at [ "target", "scrollTop" ] Decode.float)
