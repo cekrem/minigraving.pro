@@ -80,7 +80,7 @@ pageOpacity : Int -> Model -> PageOpacity msg
 pageOpacity index model =
     (case model of
         Idle ->
-            1
+            1 - toFloat index
 
         Moving _ _ prog ->
             let
@@ -191,11 +191,18 @@ view model =
         , Events.on "mousemove" decodePointerMoveEvent
         , Events.on "scroll" decodeScrollEvent
         ]
-        [ Html.header
+        [ -- TODO: stop messing around and rather make a single `viewHeader : Model -> Html msg`
+          Html.header
             [ Attr.class "fixed p-4 z-15 w-full text-center text-brand"
             , firstOpacity
             ]
             [ Html.h1 [ logoTypography ] [ Html.text "minigraving.pro" ]
+            ]
+        , Html.header
+            [ Attr.class "fixed p-4 z-15 w-full text-center text-brand"
+            , secondOpacity
+            ]
+            [ Html.h1 [ logoTypography, Attr.class "text-dark" ] [ Html.text "minigraving.pro" ]
             ]
         , Html.header
             [ Attr.class "fixed p-4 z-15 w-full text-center text-brand"
@@ -225,7 +232,7 @@ view model =
                 , Html.h3 [ Attr.class "text-lg font-bold" ]
                     [ Html.text "Små og store gravejobber i Grenland og omegn"
                     ]
-                , viewCallButton
+                , viewCallButton False
                 ]
             , viewExcavator model
             ]
@@ -234,7 +241,7 @@ view model =
         , Html.div
             [ Attr.class "flex flex-col items-center justify-center"
             , Attr.class "min-h-dvh w-full"
-            , Attr.class "z-20"
+            , Attr.class "z-10"
             , Attr.class "bg-minigraver grain overflow-clip"
             ]
             [ Html.section
@@ -244,7 +251,7 @@ view model =
                 , secondOpacity
                 ]
                 [ viewMachineStats
-                , viewCallButton
+                , viewCallButton True
                 ]
             ]
 
@@ -273,7 +280,7 @@ view model =
                         , viewPrice "Per uke" 8000
                         ]
                     ]
-                , viewCallButton
+                , viewCallButton True
                 ]
             ]
         ]
@@ -296,24 +303,29 @@ logoTypography =
     Attr.class "text-3xl font-sans font-bold font-stretch-200% uppercase"
 
 
-viewCallButton : Html msg
-viewCallButton =
+viewCallButton : BottomPositioned -> Html msg
+viewCallButton bottomPositioned =
     Html.a
-        [ Attr.class "justify-self-start self-center"
+        [ Attr.class "self-center"
         , Attr.class "flex gap-2"
         , Attr.class "px-8 py-2 mt-8"
-        , Attr.class "text-xl"
+        , Attr.class "text-xl text-white"
         , Attr.class "hover:bg-brand"
         , Attr.class "border-3 border-brand rounded-full"
         , Attr.class "transition-colors"
         , Attr.href "tel:+4790651267"
         , Attr.title "Ring for en uforpliktende samtale"
+        , HtmlHelpers.attributeIf bottomPositioned (Attr.class "fixed bottom-8")
         ]
         [ Html.div [] [ Html.text "+47" ]
         , Html.div [] [ Html.text "906" ]
         , Html.div [] [ Html.text "51" ]
         , Html.div [] [ Html.text "267" ]
         ]
+
+
+type alias BottomPositioned =
+    Bool
 
 
 
