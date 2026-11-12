@@ -254,6 +254,7 @@ viewCallButton attrs =
          , Attr.class "border-3 border-brand rounded-full"
          , Attr.class "transition-colors"
          , Attr.href "tel:+4790651267"
+         , Attr.title "Ring for en uforpliktende samtale"
          ]
             ++ attrs
         )
@@ -385,6 +386,7 @@ viewStat stat =
         , Attr.class "transition-colors hover:bg-brand"
         , Attr.href "https://kuk.kubota-eu.com/constructionmachinery/products/u27-4/"
         , Attr.target "_blank"
+        , Attr.title "Klikk for å lese mer hos produsenten"
         ]
         [ Html.dt [ Attr.class "text-xs", logoTypography ] [ Html.text stat.label ]
         , Html.dd [ Attr.class "text-2xl md:text-3xl" ]
