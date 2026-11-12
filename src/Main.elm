@@ -192,8 +192,8 @@ view model =
           Html.div
             [ Attr.class "flex flex-col items-center justify-between"
             , Attr.class "h-dvh w-full"
-            , Attr.class "overflow-clip"
-            , Attr.class "bg-gif grain"
+            , Attr.class "relative z-10"
+            , Attr.class "bg-gif grain overflow-x-clip"
             ]
             [ Html.header [ Attr.class "p-4 text-center text-brand" ]
                 [ Html.h1 [ logoTypography ] [ Html.text "minigraving.pro" ]
@@ -272,7 +272,6 @@ viewExcavator : Model -> Html msg
 viewExcavator model =
     Html.div
         [ Attr.class "flex flex-col self-end"
-        , Attr.class "z-20"
         , Attr.class "[zoom:0.3] md:[zoom:0.6]"
         , xTransform model
         ]
@@ -373,7 +372,6 @@ viewMachineStats =
         ]
     , Html.dl [ Attr.class "grid grid-cols-2 md:grid-cols-4 gap-4 w-full" ]
         (List.map viewStat machineStats)
-    , Html.p [ Attr.class "text-sm" ] [ Html.text "Stage V-motor · Under 3,5 tonn med henger · ROPS/OPG-hytte" ]
     ]
         |> HtmlHelpers.wrapToSingleNode
 
@@ -382,7 +380,7 @@ viewStat : Stat -> Html msg
 viewStat stat =
     Html.a
         [ Attr.class "flex flex-col-reverse gap-1"
-        , Attr.class "p-4"
+        , Attr.class "p-4 text-center"
         , Attr.class "border-3 border-dark rounded-xl"
         , Attr.class "transition-colors hover:bg-brand"
         , Attr.href "https://kuk.kubota-eu.com/constructionmachinery/products/u27-4/"
