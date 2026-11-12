@@ -62,11 +62,19 @@ type alias ScrollProgress =
     Float
 
 
+type alias PageOpacities msg =
+    { firstOpacity : FirstPageOpacity msg, secondOpacity : SecondPageOpacity msg, thirdOpacity : ThirdPageOpacity msg }
+
+
 type alias FirstPageOpacity msg =
     Html.Attribute msg
 
 
 type alias SecondPageOpacity msg =
+    Html.Attribute msg
+
+
+type alias ThirdPageOpacity msg =
     Html.Attribute msg
 
 
@@ -80,25 +88,36 @@ offset model =
             ( calibratedX x prog, calibratedY y prog )
 
 
-opacity : Model -> ( FirstPageOpacity msg, SecondPageOpacity msg )
+opacity : Model -> PageOpacities msg
 opacity model =
     let
         attr =
-            (+) 0.1 >> String.fromFloat >> Attr.style "opacity"
+            String.fromFloat >> Attr.style "opacity"
+
+        no =
+            HtmlHelpers.noAttribute
+
+        mapOs os =
+            case os |> List.map attr of
+                first :: second :: third :: [] ->
+                    PageOpacities first second third
+
+                _ ->
+                    PageOpacities no no no
     in
     (case model of
         Idle ->
-            ( 1, 1 )
+            [ 1, 1, 1 ]
 
         Moving _ _ prog ->
-            ( 1 - prog, prog )
+            [ 1 - prog, prog, prog - 1 ]
     )
-        |> Tuple.mapBoth attr attr
+        |> mapOs
 
 
 calibratedX : XOffset -> ScrollProgress -> Float
 calibratedX x prog =
-    x * 2 + (negate prog * 3)
+    x * 2 + (negate prog * 2)
 
 
 calibratedY : YOffset -> ScrollProgress -> Float
@@ -178,7 +197,7 @@ calculateOffset total pos =
 view : Model -> Html Msg
 view model =
     let
-        ( firstPageOpacity, secondPageOpacity ) =
+        { firstOpacity, secondOpacity, thirdOpacity } =
             model |> opacity
     in
     Html.main_
@@ -188,24 +207,24 @@ view model =
         , Events.on "mousemove" decodePointerMoveEvent
         , Events.on "scroll" decodeScrollEvent
         ]
-        [ -- first page
+        [ Html.header [ Attr.class "fixed p-4 z-15 w-full text-center text-brand" ]
+            [ Html.h1 [ logoTypography ] [ Html.text "minigraving.pro" ]
+            ]
+        , -- first page
           Html.div
             [ Attr.class "flex flex-col items-center justify-between"
             , Attr.class "h-dvh w-full"
             , Attr.class "relative z-10"
             , Attr.class "bg-gif grain overflow-x-clip"
             ]
-            [ Html.header [ Attr.class "p-4 text-center text-brand" ]
-                [ Html.h1 [ logoTypography ] [ Html.text "minigraving.pro" ]
-                ]
-            , Html.section
+            [ Html.section
                 [ Attr.class "flex flex-col items-center justify-center gap-2"
                 , Attr.class "min-w-96"
-                , Attr.class "p-8 mt-12"
+                , Attr.class "p-8 my-auto"
                 , Attr.class "font-mono text-center"
                 , Attr.class "rounded-xl"
                 , Attr.class "text-white"
-                , firstPageOpacity
+                , firstOpacity
                 ]
                 [ Html.h2 [ Attr.class "text-5xl md:text-7xl" ]
                     [ Html.text "Graving, drenering og maskinutleie"
@@ -213,7 +232,7 @@ view model =
                 , Html.h3 [ Attr.class "text-lg font-bold" ]
                     [ Html.text "Små og store gravejobber i Grenland og omegn"
                     ]
-                , viewCallButton []
+                , viewCallButton
                 ]
             , viewExcavator model
             ]
@@ -222,17 +241,41 @@ view model =
         , Html.div
             [ Attr.class "flex flex-col items-center justify-center"
             , Attr.class "min-h-dvh w-full"
-            , Attr.class "overflow-clip"
-            , Attr.class "bg-minigraver grain"
+            , Attr.class "z-20"
+            , Attr.class "bg-minigraver grain overflow-clip"
             ]
             [ Html.section
                 [ Attr.class "flex flex-col items-center gap-8"
                 , Attr.class "max-w-4xl p-8"
                 , Attr.class "font-mono text-white"
-                , secondPageOpacity
+                , secondOpacity
                 ]
                 [ viewMachineStats
-                , viewCallButton [ Attr.class "border-dark" ]
+                , viewCallButton
+                ]
+            ]
+
+        -- third page
+        , Html.div
+            [ Attr.class "flex flex-col items-center justify-center"
+            , Attr.class "min-h-dvh w-full"
+            , Attr.class "overflow-clip"
+            , Attr.class "bg-dark grain"
+            ]
+            [ Html.section
+                [ Attr.class "flex flex-col items-stretch gap-8"
+                , Attr.class "max-w-4xl p-8"
+                , Attr.class "font-mono text-white"
+                , thirdOpacity
+                ]
+                [ Html.div [ Attr.class "flex flex-col gap-2" ]
+                    [ Html.h2 [ logoTypography ] [ Html.text "Priser, gravearbeid" ]
+                    , Html.p [ Attr.class "text-lg font-bold" ] [ Html.text "TODO" ]
+                    ]
+                , Html.div [ Attr.class "flex flex-col gap-2" ]
+                    [ Html.h2 [ logoTypography ] [ Html.text "Priser, utleie" ]
+                    , Html.p [ Attr.class "text-lg font-bold" ] [ Html.text "TODO" ]
+                    ]
                 ]
             ]
         ]
@@ -243,21 +286,19 @@ logoTypography =
     Attr.class "text-3xl font-sans font-bold font-stretch-200% uppercase"
 
 
-viewCallButton : List (Html.Attribute msg) -> Html msg
-viewCallButton attrs =
+viewCallButton : Html msg
+viewCallButton =
     Html.a
-        ([ Attr.class "justify-self-start"
-         , Attr.class "flex gap-2"
-         , Attr.class "px-8 py-2 mt-8"
-         , Attr.class "text-xl"
-         , Attr.class "hover:bg-brand"
-         , Attr.class "border-3 border-brand rounded-full"
-         , Attr.class "transition-colors"
-         , Attr.href "tel:+4790651267"
-         , Attr.title "Ring for en uforpliktende samtale"
-         ]
-            ++ attrs
-        )
+        [ Attr.class "justify-self-start"
+        , Attr.class "flex gap-2"
+        , Attr.class "px-8 py-2 mt-8"
+        , Attr.class "text-xl"
+        , Attr.class "hover:bg-brand"
+        , Attr.class "border-3 border-brand rounded-full"
+        , Attr.class "transition-colors"
+        , Attr.href "tel:+4790651267"
+        , Attr.title "Ring for en uforpliktende samtale"
+        ]
         [ Html.div [] [ Html.text "+47" ]
         , Html.div [] [ Html.text "906" ]
         , Html.div [] [ Html.text "51" ]
@@ -341,7 +382,7 @@ viewWheels model =
 
 
 
--- machine stats
+-- stats
 
 
 type alias Stat =
@@ -354,7 +395,7 @@ type alias Stat =
 machineStats : List Stat
 machineStats =
     [ { label = "Vekt", value = "2590", unit = "kg" }
-    , { label = "Motor", value = "20,9", unit = "hk" }
+    , { label = "Motor", value = "19,6", unit = "hk" }
     , { label = "Gravedybde", value = "2,82", unit = "m" }
     , { label = "Rekkevidde", value = "4,74", unit = "m" }
     , { label = "Bredde", value = "1,5", unit = "m" }
@@ -379,14 +420,10 @@ viewMachineStats =
 
 viewStat : Stat -> Html msg
 viewStat stat =
-    Html.a
+    Html.div
         [ Attr.class "flex flex-col-reverse gap-1"
         , Attr.class "p-4 text-center"
         , Attr.class "border-3 border-dark rounded-xl"
-        , Attr.class "transition-colors hover:bg-brand"
-        , Attr.href "https://kuk.kubota-eu.com/constructionmachinery/products/u27-4/"
-        , Attr.target "_blank"
-        , Attr.title "Klikk for å lese mer hos produsenten"
         ]
         [ Html.dt [ Attr.class "text-xs", logoTypography ] [ Html.text stat.label ]
         , Html.dd [ Attr.class "text-2xl md:text-3xl" ]
