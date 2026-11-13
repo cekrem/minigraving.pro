@@ -4,6 +4,7 @@ import Browser
 import Html exposing (Html)
 import Html.Attributes as Attr
 import Html.Events as Events
+import Html.Lazy exposing (lazy)
 import HtmlHelpers
 import Json.Decode as Decode exposing (Decoder)
 
@@ -15,7 +16,7 @@ import Json.Decode as Decode exposing (Decoder)
 main : Program () Model Msg
 main =
     Browser.sandbox
-        { init = Idle
+        { init = init
         , view = view
         , update = update
         }
@@ -25,81 +26,30 @@ main =
 -- model
 
 
-type Model
-    = Idle
-    | Moving XOffset YOffset ScrollProgress
+type alias Model =
+    { mouseX : MouseX
+    , mouseY : MouseY
+    , scrollProgress : ScrollProgress
+    }
 
 
-type alias XOffset =
-    Float
-
-
-type alias YOffset =
-    Float
-
-
-type alias WidthPixels =
-    Float
-
-
-type alias HeightPixels =
-    Float
-
-
-type alias XPos =
-    Float
-
-
-type alias YPos =
-    Float
-
-
-type alias ScrolledDistance =
-    Float
-
-
-type alias ScrollProgress =
-    Float
-
-
-type alias PageOpacity msg =
-    Html.Attribute msg
+init : Model
+init =
+    Model 0 0 0
 
 
 offset : Model -> ( XOffset, YOffset )
-offset model =
-    case model of
-        Idle ->
-            ( 0, 0 )
-
-        Moving x y prog ->
-            ( calibratedX x prog, calibratedY y prog )
+offset { mouseX, mouseY, scrollProgress } =
+    ( calibratedXOffset mouseX scrollProgress, calibratedYOffset mouseY scrollProgress )
 
 
-pageOpacity : Int -> Model -> PageOpacity msg
-pageOpacity index model =
-    (case model of
-        Idle ->
-            1 - toFloat index
-
-        Moving _ _ prog ->
-            let
-                d =
-                    clamp 0 1 (abs (toFloat index - prog))
-            in
-            (1 + cos (pi * d)) / 2
-    )
-        |> String.fromFloat
-        |> Attr.style "opacity"
-
-
-calibratedX : XOffset -> ScrollProgress -> Float
-calibratedX x prog =
+calibratedXOffset : MouseX -> ScrollProgress -> XOffset
+calibratedXOffset x prog =
     x * 2 + (negate prog * 2)
 
 
-calibratedY : YOffset -> ScrollProgress -> Float
-calibratedY y prog =
+calibratedYOffset : MouseY -> ScrollProgress -> YOffset
+calibratedYOffset y prog =
     y * 1.1 + negate prog
 
 
@@ -142,18 +92,15 @@ type Msg
 
 update : Msg -> Model -> Model
 update msg model =
-    case ( model, msg ) of
-        ( Idle, PointerMoved width height x y ) ->
-            Moving (calculateOffset width x) (calculateOffset height y) 0
+    case msg of
+        PointerMoved width height x y ->
+            { model
+                | mouseX = calculateOffset width x
+                , mouseY = calculateOffset height y
+            }
 
-        ( Idle, Scrolled height progress ) ->
-            Moving 0 0 (progress / height)
-
-        ( Moving _ _ scroll, PointerMoved width height x y ) ->
-            Moving (calculateOffset width x) (calculateOffset height y) scroll
-
-        ( Moving x y _, Scrolled height progress ) ->
-            Moving x y (progress / height)
+        Scrolled height progress ->
+            { model | scrollProgress = progress / height }
 
 
 calculateOffset : Float -> Float -> Float
@@ -173,129 +120,147 @@ calculateOffset total pos =
 
 
 view : Model -> Html Msg
-view model =
-    let
-        firstOpacity =
-            model |> pageOpacity 0
-
-        secondOpacity =
-            model |> pageOpacity 1
-
-        thirdOpacity =
-            model |> pageOpacity 2
-    in
-    Html.main_
-        [ Attr.class "h-dvh"
-        , Attr.class "overflow-y-scroll scroll-smooth [overflow-behavior:none]"
-        , Attr.class "select-none"
-        , Events.on "mousemove" decodePointerMoveEvent
-        , Events.on "scroll" decodeScrollEvent
-        ]
-        [ -- TODO: stop messing around and rather make a single `viewHeader : Model -> Html msg`
-          Html.header
-            [ Attr.class "fixed p-4 z-15 w-full text-center text-brand"
-            , firstOpacity
-            ]
-            [ Html.h1 [ logoTypography ] [ Html.text "minigraving.pro" ]
-            ]
-        , Html.header
-            [ Attr.class "fixed p-4 z-15 w-full text-center text-brand"
-            , secondOpacity
-            ]
-            [ Html.h1 [ logoTypography, Attr.class "text-dark" ] [ Html.text "minigraving.pro" ]
-            ]
-        , Html.header
-            [ Attr.class "fixed p-4 z-15 w-full text-center text-brand"
-            , thirdOpacity
-            ]
-            [ Html.h1 [ logoTypography ] [ Html.text "minigraving.pro" ]
-            ]
-        , -- first page
-          Html.div
-            [ Attr.class "flex flex-col items-center justify-between"
-            , Attr.class "h-dvh w-full"
-            , Attr.class "relative z-10"
-            , Attr.class "bg-gif grain overflow-x-clip"
-            ]
-            [ Html.section
-                [ Attr.class "flex flex-col items-center justify-center gap-2"
-                , Attr.class "min-w-96"
-                , Attr.class "p-8 my-auto"
-                , Attr.class "font-mono text-center"
-                , Attr.class "rounded-xl"
-                , Attr.class "text-white"
-                , firstOpacity
+view =
+    lazy
+        (\model ->
+            let
+                viewModelPage =
+                    viewPage model
+            in
+            Html.main_
+                [ Attr.class "h-dvh"
+                , Attr.class "overflow-y-scroll scroll-smooth [overflow-behavior:none]"
+                , Attr.class "select-none"
+                , Events.on "mousemove" decodePointerMoveEvent
+                , Events.on "scroll" decodeScrollEvent
                 ]
-                [ Html.h2 [ Attr.class "text-5xl md:text-7xl" ]
-                    [ Html.text "Graving, drenering og maskinutleie"
+                [ viewHeader model
+                , -- first page
+                  viewModelPage
+                    0
+                    [ Attr.class "bg-gif grain overflow-x-clip" ]
+                    [ Html.section
+                        [ Attr.class "flex flex-col items-center justify-center gap-2"
+                        , Attr.class "min-w-96"
+                        , Attr.class "p-8"
+                        , Attr.class "font-mono text-center"
+                        , Attr.class "rounded-xl"
+                        , Attr.class "text-white"
+                        ]
+                        [ Html.h2 [ Attr.class "text-5xl md:text-7xl" ]
+                            [ Html.text "Graving, drenering og maskinutleie"
+                            ]
+                        , Html.h3 [ Attr.class "text-lg font-bold" ]
+                            [ Html.text "Små og store gravejobber i Grenland og omegn"
+                            ]
+                        , viewCallButton
+                        ]
+                    , viewExcavator model
                     ]
-                , Html.h3 [ Attr.class "text-lg font-bold" ]
-                    [ Html.text "Små og store gravejobber i Grenland og omegn"
-                    ]
-                , viewCallButton False
-                ]
-            , viewExcavator model
-            ]
 
-        -- second page
-        , Html.div
-            [ Attr.class "flex flex-col items-center justify-center"
-            , Attr.class "min-h-dvh w-full"
-            , Attr.class "z-10"
-            , Attr.class "bg-minigraver grain overflow-clip"
-            ]
-            [ Html.section
-                [ Attr.class "flex flex-col items-center gap-8"
-                , Attr.class "max-w-4xl p-8"
-                , Attr.class "font-mono text-white"
-                , secondOpacity
-                ]
-                [ viewMachineStats
-                , viewCallButton True
-                ]
-            ]
-
-        -- third page
-        , Html.div
-            [ Attr.class "flex flex-col items-center justify-center"
-            , Attr.class "min-h-dvh w-full"
-            , Attr.class "overflow-clip"
-            , Attr.class "bg-dark grain"
-            ]
-            [ Html.section
-                [ Attr.class "flex flex-col items-stretch gap-8"
-                , Attr.class "max-w-4xl p-8"
-                , Attr.class "font-mono text-white"
-                , thirdOpacity
-                ]
-                [ Html.div [ Attr.class "flex flex-col gap-2" ]
-                    [ Html.h2 [ logoTypography ] [ Html.text "Priser, gravearbeid" ]
-                    , Html.p [ Attr.class "text-lg font-bold" ] [ Html.text "Etter avtale" ]
+                -- second page
+                , viewModelPage
+                    1
+                    [ Attr.class "bg-minigraver grain overflow-clip"
                     ]
-                , Html.div [ Attr.class "flex flex-col gap-2" ]
-                    [ Html.h2 [ logoTypography ] [ Html.text "Priser, utleie" ]
-                    , Html.p [ Attr.class "text-lg font-bold" ]
-                        [ viewPrice "Per dag" 1500
-                        , viewPrice "Per helg" 3000
-                        , viewPrice "Per uke" 8000
+                    [ Html.section
+                        [ Attr.class "flex flex-col items-center gap-8"
+                        , Attr.class "max-w-4xl p-8"
+                        , Attr.class "font-mono text-white"
+                        ]
+                        [ viewMachineStats
                         ]
                     ]
-                , viewCallButton True
+
+                -- third page
+                , viewModelPage 2
+                    [ Attr.class "bg-dark grain"
+                    ]
+                    [ Html.section
+                        [ Attr.class "flex flex-col items-stretch gap-8"
+                        , Attr.class "max-w-4xl p-8"
+                        , Attr.class "font-mono text-white"
+                        ]
+                        [ Html.div [ Attr.class "flex flex-col gap-2" ]
+                            [ Html.h2 [ logoTypography ] [ Html.text "Priser, gravearbeid" ]
+                            , Html.p [ Attr.class "text-lg font-bold" ] [ Html.text "Etter avtale" ]
+                            ]
+                        , Html.div [ Attr.class "flex flex-col gap-2" ]
+                            [ Html.h2 [ logoTypography ] [ Html.text "Priser, utleie" ]
+                            , Html.p [ Attr.class "text-lg font-bold" ]
+                                [ viewPrice "Per dag" 1500
+                                , viewPrice "Per helg" 3000
+                                , viewPrice "Per uke" 8000
+                                ]
+                            ]
+                        ]
+                    ]
+
+                -- fixed footer, not shown on first page
+                , viewFooter model
                 ]
-            ]
+        )
+
+
+viewHeader : Model -> Html msg
+viewHeader { scrollProgress } =
+    let
+        evenPage =
+            (scrollProgress |> floor |> modBy 2) == 0
+
+        colorAttr =
+            if evenPage then
+                Attr.class "text-brand"
+
+            else
+                Attr.class "text-dark"
+    in
+    Html.header
+        [ Attr.class "fixed p-4 z-15 w-full text-center transition-colors"
+        , colorAttr
+        ]
+        [ Html.h1 [ logoTypography ] [ Html.text "minigraving.pro" ]
         ]
 
 
-viewPrice : String -> Int -> Html msg
-viewPrice label price =
-    Html.div [ Attr.class "flex justify-between" ]
-        [ Html.div [] [ Html.text label ]
-        , Html.div [ Attr.class "text-brand" ]
-            [ Html.text <| String.fromInt price
-            , Html.text ",- "
-            , Html.text "eks. mva"
-            ]
+viewPage : Model -> Int -> List (Html.Attribute msg) -> List (Html msg) -> Html msg
+viewPage model index attrs =
+    Html.div
+        (Attr.class "flex flex-col items-center justify-center"
+            :: Attr.class "h-dvh w-full"
+            :: Attr.class "relative z-10"
+            :: (model |> pageOpacity index)
+            :: attrs
+        )
+
+
+viewFooter : Model -> Html msg
+viewFooter { scrollProgress } =
+    let
+        visibilityAttr =
+            if scrollProgress >= 0.8 then
+                Attr.style "opacity" (String.fromFloat scrollProgress)
+
+            else
+                Attr.class "opacity-0"
+    in
+    Html.footer
+        [ Attr.class "z-100 fixed bottom-8 w-full flex justify-center transition-opacity"
+        , visibilityAttr
         ]
+        [ viewCallButton ]
+
+
+pageOpacity : Int -> Model -> Html.Attribute msg
+pageOpacity index { scrollProgress } =
+    let
+        d =
+            clamp 0 1 (abs (toFloat index - scrollProgress))
+    in
+    (1 + cos (pi * d))
+        / 2
+        |> String.fromFloat
+        |> Attr.style "opacity"
 
 
 logoTypography : Html.Attribute msg
@@ -303,8 +268,8 @@ logoTypography =
     Attr.class "text-3xl font-sans font-bold font-stretch-200% uppercase"
 
 
-viewCallButton : BottomPositioned -> Html msg
-viewCallButton bottomPositioned =
+viewCallButton : Html msg
+viewCallButton =
     Html.a
         [ Attr.class "self-center"
         , Attr.class "flex gap-2"
@@ -315,17 +280,12 @@ viewCallButton bottomPositioned =
         , Attr.class "transition-colors"
         , Attr.href "tel:+4790651267"
         , Attr.title "Ring for en uforpliktende samtale"
-        , HtmlHelpers.attributeIf bottomPositioned (Attr.class "fixed bottom-8")
         ]
         [ Html.div [] [ Html.text "+47" ]
         , Html.div [] [ Html.text "906" ]
         , Html.div [] [ Html.text "51" ]
         , Html.div [] [ Html.text "267" ]
         ]
-
-
-type alias BottomPositioned =
-    Bool
 
 
 
@@ -335,7 +295,7 @@ type alias BottomPositioned =
 viewExcavator : Model -> Html msg
 viewExcavator model =
     Html.div
-        [ Attr.class "flex flex-col self-end"
+        [ Attr.class "absolute bottom-0 flex flex-col self-end"
         , Attr.class "[zoom:0.3] md:[zoom:0.6]"
         , xTransform model
         ]
@@ -432,7 +392,7 @@ viewMachineStats : Html msg
 viewMachineStats =
     [ Html.header [ Attr.class "flex flex-col gap-2" ]
         [ Html.h2 [ logoTypography ] [ Html.text "Kubota U27-4" ]
-        , Html.p [ Attr.class "text-lg font-bold" ] [ Html.text "Vi har en sterk og kompakt minigraver med null halesving, som kommer til der store maskiner ikke slipper inn. Vi leier ut med og uten fører, og graveren kan kjøres uten maskinførerbevis" ]
+        , Html.p [ Attr.class "text-lg font-bold" ] [ Html.text "Vi har en sterk og kompakt minigraver med null halesving, som kommer til der store maskiner ikke slipper inn. Vi leier ut med og uten fører, og graveren kan kjøres uten maskinførerbevis." ]
         ]
     , Html.dl [ Attr.class "grid grid-cols-2 md:grid-cols-3 gap-4 w-full" ]
         (List.map viewStat machineStats)
@@ -445,12 +405,28 @@ viewStat stat =
     Html.div
         [ Attr.class "flex flex-col-reverse gap-1"
         , Attr.class "p-4 text-center"
-        , Attr.class "border-3 border-dark rounded-xl"
+        , Attr.class "bg-dark rounded-xl"
         ]
         [ Html.dt [ Attr.class "text-xs", logoTypography ] [ Html.text stat.label ]
         , Html.dd [ Attr.class "text-2xl md:text-3xl" ]
             [ Html.text stat.value
-            , Html.span [ Attr.class "ml-1 text-base text-dark" ] [ Html.text stat.unit ]
+            , Html.span [ Attr.class "ml-1 text-base text-brand" ] [ Html.text stat.unit ]
+            ]
+        ]
+
+
+
+-- price / info
+
+
+viewPrice : String -> Int -> Html msg
+viewPrice label price =
+    Html.div [ Attr.class "flex justify-between" ]
+        [ Html.div [] [ Html.text label ]
+        , Html.div [ Attr.class "text-brand" ]
+            [ Html.text <| String.fromInt price
+            , Html.text ",- "
+            , Html.text "eks. mva"
             ]
         ]
 
@@ -473,3 +449,47 @@ decodeScrollEvent =
     Decode.map2 Scrolled
         (Decode.at [ "target", "clientHeight" ] Decode.float)
         (Decode.at [ "target", "scrollTop" ] Decode.float)
+
+
+
+-- type alias "decorators"
+
+
+type alias MouseX =
+    Float
+
+
+type alias MouseY =
+    Float
+
+
+type alias XOffset =
+    Float
+
+
+type alias YOffset =
+    Float
+
+
+type alias WidthPixels =
+    Float
+
+
+type alias HeightPixels =
+    Float
+
+
+type alias XPos =
+    Float
+
+
+type alias YPos =
+    Float
+
+
+type alias ScrolledDistance =
+    Float
+
+
+type alias ScrollProgress =
+    Float

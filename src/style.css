@@ -7,6 +7,10 @@
   --default-mono-font-family: "IBM Plex Mono";
 }
 
+body {
+  @apply bg-dark;
+}
+
 .bg-house {
   background-image: url("./house.svg");
 }
