@@ -8,4 +8,6 @@ const result = await Bun.build({
   minify: true,
 });
 
+await Bun.$`cp logo.png dist/`;
+
 console.log(result);

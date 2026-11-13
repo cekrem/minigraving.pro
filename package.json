@@ -1,6 +1,6 @@
 {
   "devDependencies": {
-    "bun-plugin-elm": "^0.1.0",
+    "bun-plugin-elm": "^0.1.2",
     "bun-plugin-tailwind": "^0.1.2",
     "elm": "0.19.3-0"
   },
