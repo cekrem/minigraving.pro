@@ -206,7 +206,12 @@ viewHeader : Model -> Html msg
 viewHeader { scrollProgress } =
     let
         evenPage =
-            (scrollProgress |> floor |> modBy 2) == 0
+            (scrollProgress
+                |> (+) 0.05
+                |> floor
+                |> modBy 2
+            )
+                == 0
 
         colorAttr =
             if evenPage then
@@ -259,6 +264,7 @@ pageOpacity index { scrollProgress } =
     in
     (1 + cos (pi * d))
         / 2
+        |> (+) 0.2
         |> String.fromFloat
         |> Attr.style "opacity"
 
