@@ -4,7 +4,7 @@
 @theme {
   --color-brand: #f75202;
   --color-dark: #3d3b3a;
-  --default-mono-font-family: "IBM Plex Mono";
+  --font-mono: "IBM Plex Mono";
 }
 
 body {

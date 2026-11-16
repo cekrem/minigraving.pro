@@ -140,7 +140,7 @@ view =
                     0
                     [ Attr.class "bg-gif grain overflow-x-clip" ]
                     [ Html.section
-                        [ Attr.class "flex flex-col items-center justify-center gap-2"
+                        [ Attr.class "flex flex-col items-center justify-center gap-8"
                         , Attr.class "min-w-96"
                         , Attr.class "p-8"
                         , Attr.class "font-mono text-center"
@@ -150,7 +150,7 @@ view =
                         [ Html.h2 [ Attr.class "text-5xl md:text-7xl" ]
                             [ Html.text "Graving, drenering og maskinutleie"
                             ]
-                        , Html.h3 [ Attr.class "text-lg font-bold" ]
+                        , Html.h3 [ Attr.class "text-xl md:text-3xl" ]
                             [ Html.text "Små og store gravejobber i Grenland og omegn"
                             ]
                         , viewCallButton
@@ -183,11 +183,11 @@ view =
                         ]
                         [ Html.div [ Attr.class "flex flex-col gap-2" ]
                             [ Html.h2 [ logoTypography ] [ Html.text "Priser, gravearbeid" ]
-                            , Html.p [ Attr.class "text-lg font-bold" ] [ Html.text "Etter avtale" ]
+                            , Html.p [ Attr.class "text-xl" ] [ Html.text "Etter avtale" ]
                             ]
                         , Html.div [ Attr.class "flex flex-col gap-2" ]
                             [ Html.h2 [ logoTypography ] [ Html.text "Priser, utleie" ]
-                            , Html.p [ Attr.class "text-lg font-bold" ]
+                            , Html.p [ Attr.class "text-xl" ]
                                 [ viewPrice "Per dag" 1500
                                 , viewPrice "Per helg" 3000
                                 , viewPrice "Per uke" 8000
@@ -279,8 +279,8 @@ viewCallButton =
     Html.a
         [ Attr.class "self-center"
         , Attr.class "flex gap-2"
-        , Attr.class "px-8 py-2 mt-8"
-        , Attr.class "text-xl text-white"
+        , Attr.class "px-8 py-2"
+        , Attr.class "text-xl text-white font-mono"
         , Attr.class "hover:bg-brand"
         , Attr.class "border-3 border-brand rounded-full"
         , Attr.class "transition-colors"
@@ -398,7 +398,7 @@ viewMachineStats : Html msg
 viewMachineStats =
     [ Html.header [ Attr.class "flex flex-col gap-2" ]
         [ Html.h2 [ logoTypography ] [ Html.text "Kubota U27-4" ]
-        , Html.p [ Attr.class "text-lg font-bold" ] [ Html.text "Vi har en sterk og kompakt minigraver med null halesving, som kommer til der store maskiner ikke slipper inn. Vi leier ut med og uten fører, og graveren kan kjøres uten maskinførerbevis." ]
+        , Html.p [ Attr.class "text-xl" ] [ Html.text "Vi har en sterk og kompakt minigraver med null halesving, som kommer til der store maskiner ikke slipper inn. Vi leier ut med og uten fører, og graveren kan kjøres uten maskinførerbevis." ]
         ]
     , Html.dl [ Attr.class "grid grid-cols-2 md:grid-cols-3 gap-4 w-full" ]
         (List.map viewStat machineStats)
