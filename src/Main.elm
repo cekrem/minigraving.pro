@@ -183,7 +183,12 @@ view =
                         ]
                         [ Html.div [ Attr.class "flex flex-col gap-2" ]
                             [ Html.h2 [ logoTypography ] [ Html.text "Priser, gravearbeid" ]
-                            , Html.p [ Attr.class "text-xl" ] [ Html.text "Etter avtale" ]
+                            , Html.p [ Attr.class "text-xl" ]
+                                [ viewPrice "Per time" 890
+                                , viewPrice "Per dag" 1600
+                                , viewPrice "Per helg" 3500
+                                , viewPrice "Per uke" 1200
+                                ]
                             ]
                         , Html.div [ Attr.class "flex flex-col gap-2" ]
                             [ Html.h2 [ logoTypography ] [ Html.text "Priser, utleie" ]
