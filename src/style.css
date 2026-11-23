@@ -11,6 +11,11 @@ body {
   @apply bg-dark;
 }
 
+:root {
+  overscroll-behavior: none;
+  overflow-x: clip;
+}
+
 .bg-house {
   background-image: url("./house.svg");
 }
