@@ -1,12 +1,14 @@
 module Main exposing (main)
 
 import Browser
+import Browser.Dom
+import Browser.Events
 import Html exposing (Html)
 import Html.Attributes as Attr
-import Html.Events as Events
 import Html.Lazy exposing (lazy)
 import HtmlHelpers
 import Json.Decode as Decode exposing (Decoder)
+import Task
 
 
 
@@ -15,10 +17,11 @@ import Json.Decode as Decode exposing (Decoder)
 
 main : Program () Model Msg
 main =
-    Browser.sandbox
+    Browser.document
         { init = init
-        , view = view
+        , view = \model -> { title = "Minigraving.pro", body = [ view model ] }
         , update = update
+        , subscriptions = subscriptions
         }
 
 
@@ -30,12 +33,13 @@ type alias Model =
     { mouseX : MouseX
     , mouseY : MouseY
     , scrollProgress : ScrollProgress
+    , visibility : Browser.Events.Visibility
     }
 
 
-init : Model
-init =
-    Model 0 0 0
+init : () -> ( Model, Cmd msg )
+init () =
+    ( Model 0 0 0 Browser.Events.Visible, Cmd.none )
 
 
 offset : Model -> ( XOffset, YOffset )
@@ -87,20 +91,30 @@ xTransform =
 
 type Msg
     = PointerMoved WidthPixels HeightPixels XPos YPos
-    | Scrolled HeightPixels ScrolledDistance
+    | AnimationFrameTicked
+    | GotViewport Browser.Dom.Viewport
+    | VisibilityChanged Browser.Events.Visibility
 
 
-update : Msg -> Model -> Model
+update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        VisibilityChanged v ->
+            ( { model | visibility = v }, Cmd.none )
+
         PointerMoved width height x y ->
-            { model
+            ( { model
                 | mouseX = calculateOffset width x
                 , mouseY = calculateOffset height y
-            }
+              }
+            , Cmd.none
+            )
 
-        Scrolled height progress ->
-            { model | scrollProgress = progress / height }
+        AnimationFrameTicked ->
+            ( model, Task.perform GotViewport Browser.Dom.getViewport )
+
+        GotViewport { viewport } ->
+            ( { model | scrollProgress = viewport.y / viewport.height }, Cmd.none )
 
 
 calculateOffset : Float -> Float -> Float
@@ -128,11 +142,7 @@ view =
                     viewPage model
             in
             Html.main_
-                [ Attr.class "h-dvh"
-                , Attr.class "overflow-y-scroll scroll-smooth [overflow-behavior:none]"
-                , Attr.class "select-none"
-                , Events.on "mousemove" decodePointerMoveEvent
-                , Events.on "scroll" decodeScrollEvent
+                [ Attr.class "contents"
                 ]
                 [ viewHeader model
                 , -- first page
@@ -212,7 +222,6 @@ viewHeader { scrollProgress } =
     let
         evenPage =
             (scrollProgress
-                |> (+) 0.05
                 |> floor
                 |> modBy 2
             )
@@ -237,7 +246,7 @@ viewPage : Model -> Int -> List (Html.Attribute msg) -> List (Html msg) -> Html 
 viewPage model index attrs =
     Html.div
         (Attr.class "flex flex-col items-center justify-center"
-            :: Attr.class "h-dvh w-full"
+            :: Attr.class "h-lvh w-full"
             :: Attr.class "relative z-10"
             :: (model |> pageOpacity index)
             :: attrs
@@ -248,7 +257,7 @@ viewFooter : Model -> Html msg
 viewFooter { scrollProgress } =
     let
         visibilityAttr =
-            if scrollProgress >= 0.8 then
+            if scrollProgress >= 0.9 then
                 Attr.style "opacity" (String.fromFloat scrollProgress)
 
             else
@@ -455,11 +464,24 @@ decodePointerMoveEvent =
         (Decode.field "clientY" Decode.float)
 
 
-decodeScrollEvent : Decoder Msg
-decodeScrollEvent =
-    Decode.map2 Scrolled
-        (Decode.at [ "target", "clientHeight" ] Decode.float)
-        (Decode.at [ "target", "scrollTop" ] Decode.float)
+
+-- subscriptions
+
+
+subscriptions : Model -> Sub Msg
+subscriptions { visibility } =
+    Sub.batch
+        (Browser.Events.onVisibilityChange VisibilityChanged
+            :: (case visibility of
+                    Browser.Events.Visible ->
+                        [ Browser.Events.onAnimationFrame (always AnimationFrameTicked)
+                        , Browser.Events.onMouseMove decodePointerMoveEvent
+                        ]
+
+                    Browser.Events.Hidden ->
+                        []
+               )
+        )
 
 
 
@@ -495,10 +517,6 @@ type alias XPos =
 
 
 type alias YPos =
-    Float
-
-
-type alias ScrolledDistance =
     Float
 
 
