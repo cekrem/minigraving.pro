@@ -197,7 +197,7 @@ view =
                                 [ viewPrice "Per time" 890
                                 , viewPrice "Per dag" 1600
                                 , viewPrice "Per helg" 3500
-                                , viewPrice "Per uke" 1200
+                                , viewPrice "Per uke" 12000
                                 ]
                             ]
                         , Html.div [ Attr.class "flex flex-col gap-2" ]
@@ -264,7 +264,7 @@ viewFooter { scrollProgress } =
                 Attr.class "opacity-0"
     in
     Html.footer
-        [ Attr.class "z-100 fixed bottom-8 w-full flex justify-center transition-opacity"
+        [ Attr.class "z-100 fixed bottom-8 mb-[env(safe-area-inset-bottom)] w-full flex justify-center transition-opacity"
         , visibilityAttr
         ]
         [ viewCallButton ]
